@@ -51,11 +51,11 @@ def get_address_suggestions(query):
         return []
 
 # Function to find nearby places using OpenStreetMap Nominatim API
-def get_nearby_places(activity_type, lat, lon):
+def get_nearby_places(activity_type, lat, lon, distance):
     if lat is None or lon is None:
         return []
 
-    url = f"https://nominatim.openstreetmap.org/search?format=json&q={activity_type}&lat={lat}&lon={lon}&radius=5000"
+    url = f"https://nominatim.openstreetmap.org/search?format=json&q={activity_type}&lat={lat}&lon={lon}&radius={distance * 1000}"  # radius in meters
     headers = {"User-Agent": "MyWellnessApp/1.0 (contact@example.com)"}
     
     try:
@@ -88,11 +88,15 @@ def main():
     else:
         st.warning("Couldn't retrieve your location or weather data.")
     
-    # User inputs
+    # User inputs for activity preferences
     mood = st.selectbox("How are you feeling today?", ["Happy", "Stressed", "Bored", "Sad", "Energetic", "Tired"])
     activity_type = st.radio("Would you like to:", ["Workout", "Relax"])
     intensity = st.radio("Select intensity:", ["High", "Low"] if activity_type == "Workout" else ["Deep relaxation", "Light relaxation"])
     group_preference = st.radio("Would you prefer to be:", ["Alone", "In a group"])
+    cost_option = st.radio("Do you want the activity to be free or paid?", ["Free", "Paid"])
+    if cost_option == "Paid":
+        min_cost, max_cost = st.slider("Select your cost range:", 0, 500, (20, 100))
+    distance = st.slider("Maximum distance you are willing to travel (in km):", 0, 50, 10)
     
     # Address input with live suggestions
     user_query = st.text_input("Start typing your address:")
@@ -104,26 +108,37 @@ def main():
             lat, lon = float(suggestions[0]["lat"]), float(suggestions[0]["lon"])
         else:
             st.warning("No address suggestions found.")
-    
+            
     # Let user select the activity before generating the map
     activity_options = ["Yoga in a park", "High-intensity gym session", "Meditation by the lake", "Group dance class", "Solo nature walk", "Spa session", "Cycling route"]
     selected_activity = st.selectbox("Select an activity you’d like to do:", activity_options)
     
+
+    def suggest_sports(mood, activity_type, intensity, group_preference, cost_option, min_cost=None, max_cost=None):
+        prompt = f"I am feeling {mood}, I want to {activity_type.lower()}, and I prefer {intensity.lower()} intensity. "
+        prompt += f"I would like to be {group_preference.lower()} and I want the activity to be {cost_option.lower()}. "
+        if cost_option == "Paid":
+            prompt += f"The cost range should be between {min_cost} and {max_cost}. "
+        prompt += "Suggest some sports that fit these preferences."
+        return prompt
+
     # Generate button
     if st.button("Generate Map & Suggestions") and lat and lon:
+        # Generate sports suggestions based on user preferences
+        sports_prompt = suggest_sports(mood, activity_type, intensity, group_preference, cost_option, min_cost, max_cost if cost_option == "Paid" else None)
+        sports_response = model.generate_content(sports_prompt)
+        sports_suggestions = sports_response.text if sports_response.text else "Sorry, I couldn't generate sports suggestions."
+        st.write(f"Here are some sports suggestions based on your preferences:\n{sports_suggestions}")
+
         # Find and display locations based on the selected activity
-        places = get_nearby_places(selected_activity, lat, lon)
-        
+        places = get_nearby_places(activity_type, lat, lon, distance)
         if places:
-            st.write(f"📍 Suggested locations for {selected_activity.lower()} near {selected_address}:")
-            
-            # Display 3D Map using PyDeck
+            st.write(f"📍 Suggested locations for {activity_type.lower()} near {selected_address}:")
             map_data = [{
                 "lat": float(place["lat"]),
                 "lon": float(place["lon"]),
                 "name": place["display_name"]
             } for place in places]
-            
             layer = pdk.Layer(
                 "ScatterplotLayer",
                 data=map_data,
@@ -139,13 +154,10 @@ def main():
     
     # Chatbot interaction
     user_input = st.chat_input("Ask me anything about fitness, nutrition, or well-being...")
-    
     if user_input:
-        st.chat_message("user").markdown(user_input)
         response = model.generate_content(user_input)
         ai_reply = response.text if response.text else "Sorry, I couldn't generate a response."
-        with st.chat_message("assistant"):
-            st.markdown(ai_reply)
+        st.chat_message("assistant").markdown(ai_reply)
 
 if __name__ == "__main__":
     main()
