@@ -1,0 +1,8 @@
+streamlit
+google-generativeai
+requests
+folium
+streamlit-folium
+geocoder
+openrouteservice
+geopy
