@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as st 
 import google.generativeai as genai
 import folium
 from streamlit_folium import folium_static
