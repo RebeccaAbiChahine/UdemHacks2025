@@ -70,8 +70,8 @@ def suggest_places(mood, activity_type, intensity, group_preference, cost_option
         return suggestions[:5]
 
 # Streamlit UI
-st.set_page_config(page_title="Fit Forecast - AI Wellness Chatbot", page_icon="💪", layout="wide")
-st.markdown("<h1 style='text-align: center; color: #008CBA;'>💪 Fit Forecast - AI Wellness Chatbot</h1>", unsafe_allow_html=True)
+st.set_page_config(page_title="Fitness Forecast - AI Wellness Chatbot", page_icon="💪", layout="wide")
+st.markdown("<h1 style='text-align: center; color: #008CBA;'>💪 Fitness Forecast - AI Wellness Chatbot</h1>", unsafe_allow_html=True)
 
 # Address input
 user_query = st.text_input("Enter your address:")
