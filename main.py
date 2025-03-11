@@ -5,9 +5,13 @@ from streamlit_folium import folium_static
 from geopy.geocoders import Nominatim
 import requests
 from geopy.distance import geodesic
+from dotenv import load_dotenv
+import os
 
 # Configure the Gemini API
-GEMINI_API_KEY = "AIzaSyA5-LfT8Wcf02ABUKySXOZpNhQd5sDajtg"
+load_dotenv()
+private_key=os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY = private_key
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel("gemini-2.0-flash")
 
